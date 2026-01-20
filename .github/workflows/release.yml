@@ -1,23 +1,26 @@
 name: Production Deploy
 
-on:
+on: # yamllint disable-line rule:truthy
   workflow_dispatch:
   release:
-    types: [ released ]
+    types: [released]
 
 env:
   SUPPLY_UPLOAD_MAX_RETRIES: 5
+
+permissions:
+  contents: read
 
 jobs:
   play_promote_production:
     name: Play Publish Production
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
 
-      - uses: ruby/setup-ruby@v1
+      - uses: ruby/setup-ruby@708024e6c902387ab41de36e1669e43b5ee7085e # v1.283.0
         with:
-          ruby-version: '3.2'
+          ruby-version: "4.0.1"
           bundler-cache: true
 
       - uses: ./.github/actions/inflate-secrets

@@ -6,9 +6,6 @@
     <uses-permission android:name="com.google.android.gms.permission.CAR_FUEL" />
     <uses-permission android:name="com.google.android.gms.permission.CAR_MILEAGE" />
     <uses-permission android:name="com.google.android.gms.permission.CAR_SPEED" />
-    <uses-permission android:name="android.permission.health.READ_ACTIVE_CALORIES_BURNED" />
-    <uses-permission android:name="android.permission.health.READ_TOTAL_CALORIES_BURNED" />
-    <uses-permission android:name="android.permission.health.READ_WEIGHT" />
 
     <queries>
         <!-- For GMS Core/Play service -->
@@ -36,28 +33,9 @@
             </intent-filter>
         </activity>
 
-        <activity
-            android:name=".settings.sensor.HealthConnectPermissionActivity"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
-            </intent-filter>
-        </activity>
-
-        <activity-alias
-            android:name="ViewHealthConnectPermissionUsageActivity"
-            android:exported="true"
-            android:targetActivity=".settings.sensor.HealthConnectPermissionActivity"
-            android:permission="android.permission.START_VIEW_PERMISSION_USAGE">
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW_PERMISSION_USAGE" />
-                <category android:name="android.intent.category.HEALTH_PERMISSIONS" />
-            </intent-filter>
-        </activity-alias>
-
         <receiver android:name=".location.HighAccuracyLocationReceiver"
             android:enabled="true"
-            android:exported="true" />
+            android:exported="false" />
 
         <service
             android:name=".notifications.FirebaseCloudMessagingService"
@@ -70,12 +48,20 @@
         <service
             android:name=".location.HighAccuracyLocationService"
             android:enabled="true"
-            android:exported="true"
+            android:exported="false"
             android:foregroundServiceType="location"/>
 
         <service
             android:name=".matter.MatterCommissioningService"
-            android:exported="true" />
+            android:exported="true"
+            tools:ignore="ExportedService">
+            <!--This service is used by Google to commission devices; it needs to be exposed so that
+            Google Home Matter commissioning can forward us the commissioning request.
+            This is not described by Google documentation, but it seems that GMS is doing
+            some signature verification to avoid malicious intent coming from any other app.
+            https://github.com/home-assistant/android/pull/5509#discussion_r2214145170
+            -->
+        </service>
 
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"
@@ -92,7 +78,12 @@
             android:resource="@xml/automotive_app_desc"/>
         <service
             android:name=".vehicle.HaCarAppService"
-            android:exported="true">
+            android:intentMatchingFlags="allowNullAction"
+            android:exported="true"
+            tools:ignore="ExportedService,NewApi">
+            <!--As mentioned in the documentation it is safe to export this service without defining permission
+            https://developer.android.com/training/cars/apps#declare-carappservice
+            -->
             <intent-filter>
                 <action android:name="androidx.car.app.CarAppService" />
                 <category android:name="androidx.car.app.category.IOT"/>
@@ -108,6 +99,15 @@
             <meta-data
                 android:name="home:0:preferred"
                 android:value=""/>
+        </service>
+
+        <service android:name=".data.wear.WearDnsRequestListener" android:exported="true"
+            tools:ignore="ExportedService">
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.REQUEST_RECEIVED" />
+                <data android:scheme="wear" android:host="*"
+                    android:pathPrefix="/network/" />
+            </intent-filter>
         </service>
     </application>
 

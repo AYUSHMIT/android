@@ -8,7 +8,7 @@
         app:isPreferenceVisible="false"/>
     <Preference
         android:key="activate_server_hint"
-        android:summary="@string/server_activate_swipe_hint"
+        android:summary="@string/server_activate_gesture_hint"
         app:isPreferenceVisible="false"/>
     <PreferenceCategory
         android:title="@string/device_registration">
@@ -31,12 +31,15 @@
         <Preference
             android:key="connection_internal_ssids"
             android:icon="@drawable/ic_wifi"
-            android:title="@string/pref_connection_wifi"
-            android:summary="@string/pref_connection_ssids_empty" />
+            android:title="@string/pref_connection_homenetwork"/>
         <EditTextPreference
             android:key="connection_internal"
             android:title="@string/pref_connection_internal"
             app:useSimpleSummaryProvider="true"/>
+        <Preference
+            android:key="connection_security_level"
+            android:icon="@drawable/ic_lock"
+            android:title="@string/connection_security_level_title"/>
     </PreferenceCategory>
     <PreferenceCategory
         android:key="security_category"

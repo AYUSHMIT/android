@@ -46,6 +46,33 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.WRITE_SETTINGS"
         tools:ignore="ProtectedPermissions"/>
+    <uses-permission android:name="android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND" />
+    <uses-permission android:name="android.permission.health.READ_ACTIVE_CALORIES_BURNED" />
+    <!--    <uses-permission android:name="android.permission.health.READ_BASAL_BODY_TEMPERATURE" />-->
+    <!--    <uses-permission android:name="android.permission.health.READ_BASAL_METABOLIC_RATE" />-->
+    <uses-permission android:name="android.permission.health.READ_BLOOD_GLUCOSE" />
+    <uses-permission android:name="android.permission.health.READ_BLOOD_PRESSURE" />
+    <uses-permission android:name="android.permission.health.READ_BODY_FAT" />
+    <!--    <uses-permission android:name="android.permission.health.READ_BODY_WATER_MASS" />-->
+    <!--    <uses-permission android:name="android.permission.health.READ_BODY_TEMPERATURE" />-->
+    <!--    <uses-permission android:name="android.permission.health.READ_BONE_MASS" />-->
+    <uses-permission android:name="android.permission.health.READ_DISTANCE" />
+    <uses-permission android:name="android.permission.health.READ_ELEVATION_GAINED" />
+    <uses-permission android:name="android.permission.health.READ_FLOORS_CLIMBED" />
+    <uses-permission android:name="android.permission.health.READ_HEART_RATE" />
+    <uses-permission android:name="android.permission.health.READ_HEART_RATE_VARIABILITY" />
+    <!--    <uses-permission android:name="android.permission.health.READ_HEIGHT" />-->
+    <!--    <uses-permission android:name="android.permission.health.READ_HYDRATION" />-->
+    <!--    <uses-permission android:name="android.permission.health.READ_LEAN_BODY_MASS" />-->
+    <uses-permission android:name="android.permission.health.READ_OXYGEN_SATURATION" />
+    <uses-permission android:name="android.permission.health.READ_RESPIRATORY_RATE" />
+    <uses-permission android:name="android.permission.health.READ_RESTING_HEART_RATE" />
+    <uses-permission android:name="android.permission.health.READ_SLEEP" />
+    <uses-permission android:name="android.permission.health.READ_STEPS" />
+    <uses-permission android:name="android.permission.health.READ_TOTAL_CALORIES_BURNED" />
+    <uses-permission android:name="android.permission.health.READ_VO2_MAX" />
+    <uses-permission android:name="android.permission.health.READ_WEIGHT" />
+
 
     <uses-feature android:name="android.hardware.touchscreen" android:required="false"/>
     <uses-feature android:name="android.hardware.telephony" android:required="false"/>
@@ -71,8 +98,48 @@
         android:networkSecurityConfig="@xml/network_security_config"
         android:enableOnBackInvokedCallback="true"
         android:localeConfig="@xml/locales_config"
-        tools:ignore="GoogleAppIndexingWarning"
+        android:intentMatchingFlags="enforceIntentFilter"
+        tools:ignore="GoogleAppIndexingWarning,UnusedAttribute"
         tools:targetApi="tiramisu">
+
+        <!--
+        WARNING: Do not change the fully qualified name of this activity.
+        Android shortcuts are tied to its component name; renaming it will permanently
+        break all user-created shortcuts from previous versions.
+        -->
+        <activity
+            android:name="io.homeassistant.companion.android.launch.LaunchActivity"
+            android:exported="true"
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@style/Theme.LaunchScreen">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!--
+        WARNING: Do not change the fully qualified name of this alias.
+        It is hardcoded in settings to enable it programmatically. Renaming it would also
+        break the app for users who set it as their default launcher when updating.
+        -->
+        <activity-alias
+            android:name="io.homeassistant.companion.android.launch.LauncherAlias"
+            android:enabled="false"
+            android:exported="true"
+            android:targetActivity="io.homeassistant.companion.android.launch.LaunchActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.HOME" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity-alias>
 
         <!-- Start things like SensorWorker on device boot -->
         <receiver android:name=".websocket.WebsocketBroadcastReceiver"
@@ -111,7 +178,6 @@
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
                 <action android:name="io.homeassistant.companion.android.widgets.ButtonWidget.CALL_SERVICE" />
                 <action android:name="io.homeassistant.companion.android.widgets.ButtonWidget.CALL_SERVICE_AUTH" />
-                <action android:name="io.homeassistant.companion.android.widgets.ButtonWidget.RECEIVE_DATA" />
             </intent-filter>
 
             <meta-data
@@ -123,7 +189,6 @@
             android:exported="false">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="io.homeassistant.companion.android.widgets.camera.CameraWidget.RECEIVE_DATA" />
                 <action android:name="io.homeassistant.companion.android.widgets.camera.CameraWidget.UPDATE_IMAGE" />
             </intent-filter>
 
@@ -136,7 +201,6 @@
             android:exported="false">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="io.homeassistant.companion.android.widgets.StaticWidget.RECEIVE_DATA" />
             </intent-filter>
 
             <meta-data
@@ -144,11 +208,21 @@
                 android:resource="@xml/entity_widget_info" />
         </receiver>
 
+        <receiver android:name=".widgets.todo.TodoWidget" android:label="@string/widget_todo_label"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/todo_widget_info" />
+        </receiver>
+
         <receiver android:name=".widgets.mediaplayer.MediaPlayerControlsWidget" android:label="@string/widget_media_player_description"
             android:exported="false">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="io.homeassistant.companion.android.widgets.media_player_controls.MediaPlayerControlsWidget.RECEIVE_DATA" />
                 <action android:name="io.homeassistant.companion.android.widgets.media_player_controls.MediaPlayerControlsWidget.UPDATE_MEDIA_IMAGE" />
                 <action android:name="io.homeassistant.companion.android.widgets.media_player_controls.MediaPlayerControlsWidget.CALL_PREV_TRACK" />
                 <action android:name="io.homeassistant.companion.android.widgets.media_player_controls.MediaPlayerControlsWidget.CALL_REWIND" />
@@ -173,7 +247,6 @@
                 <action android:name="android.bluetooth.device.action.ACL_DISCONNECTED" />
                 <action android:name="io.homeassistant.companion.android.background.REQUEST_SENSORS_UPDATE" />
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="io.homeassistant.companion.android.widgets.template.TemplateWidget.RECEIVE_DATA" />
             </intent-filter>
 
             <meta-data
@@ -201,6 +274,13 @@
             </intent-filter>
         </activity>
         <activity android:name=".widgets.entity.EntityWidgetConfigureActivity"
+            android:configChanges="orientation|screenSize"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".widgets.todo.TodoWidgetConfigureActivity"
             android:configChanges="orientation|screenSize"
             android:exported="true">
             <intent-filter>
@@ -250,7 +330,12 @@
         <receiver
             android:name=".sensors.LocationSensorManager"
             android:enabled="true"
-            android:exported="true">
+            android:exported="true"
+            tools:ignore="ExportedReceiver">
+            <!--As discussed in https://github.com/home-assistant/android/pull/5509 we are ok
+            about exposing this receiver since the data are not leaking outside of Home Assistant.
+            And Action would just force the update of the sensor nothing else.
+            -->
             <intent-filter>
                 <action android:name="io.homeassistant.companion.android.background.REQUEST_ACCURATE_UPDATE" />
             </intent-filter>
@@ -259,38 +344,15 @@
         <receiver
             android:name=".sensors.ActivitySensorManager"
             android:enabled="true"
-            android:exported="true">
+            android:exported="false">
             <intent-filter>
                 <action android:name="io.homeassistant.companion.android.background.REQUEST_ACTIVITY_UPDATES" />
             </intent-filter>
         </receiver>
 
-        <activity android:name=".launch.LaunchActivity"
+        <activity android:name=".launch.link.LinkActivity"
             android:exported="true"
-            android:theme="@style/Theme.LaunchScreen">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
-            </intent-filter>
-
-
-            <intent-filter android:autoVerify="true">
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-
-                <data
-                    android:scheme="homeassistant"
-                    android:host="navigate" />
-            </intent-filter>
-        </activity>
-
-        <activity android:name=".launch.my.MyActivity"
-            android:exported="true">
+            android:launchMode="singleTask">
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -301,12 +363,39 @@
                     android:host="my.home-assistant.io"
                     android:pathPrefix="/redirect/"/>
             </intent-filter>
-        </activity>
 
-        <activity
-            android:name=".onboarding.OnboardingActivity"
-            android:configChanges="orientation|screenSize|keyboard|keyboardHidden|navigation"
-            android:theme="@style/Theme.HomeAssistant.Config" />
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:scheme="https"
+                    android:host="my.home-assistant.io"
+                    android:pathPrefix="/invite/"/>
+            </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:scheme="homeassistant"
+                    android:host="invite" />
+            </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:host="navigate"
+                    android:scheme="homeassistant" />
+            </intent-filter>
+        </activity>
 
         <activity
             android:name=".settings.wear.SettingsWearActivity"
@@ -340,7 +429,26 @@
                     android:path="/request_home_assistant_instance" />
             </intent-filter>
         </service>
-        
+
+        <activity
+            android:name=".settings.sensor.HealthConnectPermissionActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
+            </intent-filter>
+        </activity>
+
+        <activity-alias
+            android:name="ViewHealthConnectPermissionUsageActivity"
+            android:exported="true"
+            android:targetActivity=".settings.sensor.HealthConnectPermissionActivity"
+            android:permission="android.permission.START_VIEW_PERMISSION_USAGE">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW_PERMISSION_USAGE" />
+                <category android:name="android.intent.category.HEALTH_PERMISSIONS" />
+            </intent-filter>
+        </activity-alias>
+
         <activity
             android:name=".webview.WebViewActivity"
             android:supportsPictureInPicture="true"
@@ -351,7 +459,7 @@
         <activity
             android:name=".settings.SettingsActivity"
             android:parentActivityName=".webview.WebViewActivity"
-            android:exported="true"
+            android:exported="false"
             android:configChanges="orientation|screenSize"
             android:theme="@style/Theme.HomeAssistant.Config" />
 
@@ -444,6 +552,15 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/provider_paths"/>
         </provider>
+
+        <activity
+            android:name=".qs.TilePreferenceActivity"
+            android:exported="true"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE_PREFERENCES" />
+            </intent-filter>
+        </activity>
 
         <service
             android:name=".qs.Tile1Service"
@@ -886,7 +1003,7 @@
         <receiver
             android:name=".notifications.NotificationActionReceiver"
             android:enabled="true"
-            android:exported="true" />
+            android:exported="false" />
 
         <service
             android:name="androidx.work.impl.foreground.SystemForegroundService"
