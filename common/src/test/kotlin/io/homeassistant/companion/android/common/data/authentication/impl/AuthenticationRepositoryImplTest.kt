@@ -59,7 +59,7 @@ class AuthenticationRepositoryImplTest {
             session = ServerSessionInfo(
                 accessToken = testAccessToken,
                 refreshToken = testRefreshToken,
-                tokenExpiration = System.currentTimeMillis() / 1000 - 100, // Expired
+                tokenExpiration = 1000000L, // Fixed expired timestamp
                 tokenType = "Bearer",
                 installId = testInstallId,
             ),
