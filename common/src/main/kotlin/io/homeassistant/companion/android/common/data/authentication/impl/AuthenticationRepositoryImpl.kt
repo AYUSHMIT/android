@@ -16,6 +16,8 @@ import io.homeassistant.companion.android.database.server.Server
 import io.homeassistant.companion.android.database.server.ServerSessionInfo
 import io.homeassistant.companion.android.di.qualifiers.NamedInstallId
 import io.homeassistant.companion.android.di.qualifiers.NamedSessionStorage
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import timber.log.Timber
@@ -32,6 +34,12 @@ class AuthenticationRepositoryImpl @AssistedInject constructor(
         private const val PREF_BIOMETRIC_ENABLED = "biometric_enabled"
         private const val PREF_BIOMETRIC_HOME_BYPASS_ENABLED = "biometric_home_bypass_enabled"
     }
+
+    /**
+     * Mutex to ensure only one token refresh operation is in progress at a time for this server.
+     * Prevents race conditions when multiple components trigger refresh simultaneously.
+     */
+    private val refreshMutex = Mutex()
 
     private suspend fun server(): Server {
         return checkNotNull(serverManager.getServer(serverId)) { "No server found for id $serverId" }
@@ -131,33 +139,35 @@ class AuthenticationRepositoryImpl @AssistedInject constructor(
     }
 
     private suspend fun refreshSessionWithToken(baseUrl: HttpUrl, refreshToken: String) {
-        val server = server()
-        return authenticationService.refreshToken(
-            baseUrl.newBuilder().addPathSegments(SEGMENT_AUTH_TOKEN).build(),
-            AuthenticationService.GRANT_TYPE_REFRESH,
-            refreshToken,
-            AuthenticationService.CLIENT_ID,
-        ).let {
-            if (it.isSuccessful) {
-                val refreshedToken = it.body() ?: throw AuthorizationException()
-                serverManager.updateServer(
-                    server.copy(
-                        session = ServerSessionInfo(
-                            accessToken = refreshedToken.accessToken,
-                            refreshToken = refreshToken,
-                            tokenExpiration = System.currentTimeMillis() / 1000 + refreshedToken.expiresIn,
-                            tokenType = refreshedToken.tokenType,
-                            installId = installId(),
+        refreshMutex.withLock {
+            val server = server()
+            return authenticationService.refreshToken(
+                baseUrl.newBuilder().addPathSegments(SEGMENT_AUTH_TOKEN).build(),
+                AuthenticationService.GRANT_TYPE_REFRESH,
+                refreshToken,
+                AuthenticationService.CLIENT_ID,
+            ).let {
+                if (it.isSuccessful) {
+                    val refreshedToken = it.body() ?: throw AuthorizationException()
+                    serverManager.updateServer(
+                        server.copy(
+                            session = ServerSessionInfo(
+                                accessToken = refreshedToken.accessToken,
+                                refreshToken = refreshToken,
+                                tokenExpiration = System.currentTimeMillis() / 1000 + refreshedToken.expiresIn,
+                                tokenType = refreshedToken.tokenType,
+                                installId = installId(),
+                            ),
                         ),
-                    ),
-                )
-                return@let
-            } else if (it.code() == 400 &&
-                it.errorBody()?.string()?.contains("invalid_grant") == true
-            ) {
-                revokeSession()
+                    )
+                    return@let
+                } else if (it.code() == 400 &&
+                    it.errorBody()?.string()?.contains("invalid_grant") == true
+                ) {
+                    revokeSession()
+                }
+                throw AuthorizationException("Failed to refresh token", it.code(), it.errorBody())
             }
-            throw AuthorizationException("Failed to refresh token", it.code(), it.errorBody())
         }
     }
 
