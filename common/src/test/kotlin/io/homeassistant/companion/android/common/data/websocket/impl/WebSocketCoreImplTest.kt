@@ -866,6 +866,55 @@ subscribeTo
         }
     }
 
+    @Test
+    fun `Given an Active subscription When disconnection occurs and resubscribe fails Then it keeps the old subscription in activeMessages`() = runTest {
+        // Re-subscription happens on the background scope; use a controllable scope
+        val subscriptionScope = TestScope(UnconfinedTestDispatcher())
+        setupServer(backgroundScope = subscriptionScope)
+        prepareAuthenticationAnswer()
+        assertTrue(webSocketCore.connect())
+    
+        // Initial subscribe ok -> id=2
+        mockResultSuccessForId(2)
+    
+        checkNotNull(
+            webSocketCore.subscribeTo<StateChangedEvent>(
+                SUBSCRIBE_TYPE_SUBSCRIBE_EVENTS,
+                mapOf("event_type" to "state_changed"),
+            ),
+        ).test {
+            // Verify subscription tracked under id=2
+            assertEquals(1, webSocketCore.activeMessages.size)
+            assertTrue(webSocketCore.activeMessages.containsKey(2L))
+    
+            // Drop the connection -> triggers reconnect + resubscribe in background
+            closeConnection()
+    
+            // Make the resubscribe request fail.
+            // The next subscription attempt should have a new id (in the existing test it becomes 4).
+            // Return a failure result for that new id.
+            every { mockConnection.send(match<String> { it.contains(""""id":4""") }) } answers {
+                webSocketListener.onMessage(
+                    mockConnection,
+                    """{"id":4,"type":"result","success":false,"result":{}}""",
+                )
+                true
+            }
+    
+            advanceUntilIdle()
+    
+            // The key assertion: old subscription should still exist so we can retry later
+            assertTrue(webSocketCore.activeMessages.containsKey(2L))
+    
+            // And the failed new id should NOT replace it
+            assertFalse(webSocketCore.activeMessages.containsKey(4L))
+        }
+    }
+
+
+
+
+
     /*
 shutdown()
      */
